@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+	<link rel="stylesheet" type="text/css" href="datei.css" />
+    <script src="app.js" type="application/javascript"></script>
+    <title>Bestellung</title>
+</head>
+<body>
+<section class="header">
+    <h2>Bestellung</h2>
+</section>
+<div> 
+<div class="inline"> <table>
+    <tr>
+        <td><img src="Bilder/1.png" width="100" height="100" alt="" title="Margherita" onclick="cart.addPizza('Margherita', 4.00)" /></td>
+        <td>Margherita</td>
+        <td>4,00</td>
+    </tr>
+    <tr>
+        <td><img src="Bilder/2.png" width="100" height="100" alt="" title="Salami" onclick="cart.addPizza('Salami', 4.50)"/></td>
+        <td>Salami</td>
+        <td>4,50</td>
+    </tr>
+    <tr>
+        <td><img src="Bilder/3.png" width="100" height="100" alt="" title="Hawaii" onclick="cart.addPizza('Hawaii', 5.50)" /></td>
+        <td>Hawaii</td>
+        <td>5,50</td>
+    </tr>
+</table>
+</div>
+<div class="inline align-top"> <form action="https://www.fbi.h-da.de/cgi-bin/Echo.pl" onsubmit="return cart.submit()">
+    <select name="pizzas" multiple="multiple" id="pizza_list" size="10" title="Pizzen">
+	</select>
+    <p id="total_price"> 0,00€ </p>
+    <label for="lieferadresse">Lieferadresse:</label>
+    <input type="text" id="lieferadresse" name="lieferadresse" value="" size="30" maxlength="40" placeholder="" />
+    <p><input type="button" name="Alle Löschen" value="Alle Löschen" onclick="cart.reset()"/>
+        <input type="button" name="Auswahl Löschen" value="Auswahl Löschen" onclick="cart.removePizza()"/>
+        <input type="submit" value="Bestellen"/></p>
+</form> </div> </div>
+</body>
+</html>

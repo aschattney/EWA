@@ -96,7 +96,6 @@ abstract class Page
         <html>
         <head>
             <meta charset="UTF-8"/>
-            <link rel="stylesheet" type="text/css" href="datei.css"/>
             <title><?php echo $headline ?></title>
         </head>
         <body>

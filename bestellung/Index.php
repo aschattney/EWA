@@ -17,8 +17,10 @@
  */
 
 // to do: change name 'PageTemplate' throughout this file
-require_once 'template/Page.php';
-require_once 'PizzaserviceMenuBlock.php';
+require_once '../template/Page.php';
+require_once './PizzaCartBlock.php';
+require_once './PizzaListBlock.php';
+require_once './OrderHeaderBlock.php';
 
 /**
  * This is a template for top level classes, which represent
@@ -32,12 +34,14 @@ require_once 'PizzaserviceMenuBlock.php';
  * @author   Bernhard Kreling, <b.kreling@fbi.h-da.de>
  * @author   Ralf Hahn, <ralf.hahn@h-da.de>
  */
-class Home extends Page
+class Index extends Page
 {
     // to do: declare reference variables for members
     // representing substructures/blocks
 
-    private $pizzaservice_menu_block;
+    private $orderHeaderBlock;
+    private $pizzaCartBlock;
+    private $pizzaListBlock;
 
     /**
      * Instantiates members (to be defined above).
@@ -49,7 +53,9 @@ class Home extends Page
     protected function __construct()
     {
         parent::__construct();
-        $this->pizzaservice_menu_block = new PizzaserviceMenuBlock($this->_database);
+        $this->orderHeaderBlock = new OrderHeaderBlock($this->_database);
+        $this->pizzaCartBlock = new PizzaCartBlock($this->_database);
+        $this->pizzaListBlock = new PizzaListBlock($this->_database);
         // to do: instantiate members representing substructures/blocks
     }
 
@@ -90,11 +96,16 @@ class Home extends Page
         $this->getViewData();
         $this->generatePageHeader('Pizzaservice');
         ?>
-            <link rel="stylesheet" type="text/css" href="datei.css"/>
+            <link rel="stylesheet" type="text/css" href="../datei.css"/>
+            <script src="../app.js" type="application/javascript"></script>
         <?php
         // to do: call generateView() for all members
         // to do: output view of this page
-        $this->pizzaservice_menu_block->generateView();
+        $this->orderHeaderBlock->generateView();
+        echo "<div>";
+        $this->pizzaCartBlock->generateView();
+        $this->pizzaListBlock->generateView();
+        echo '</div>';
         $this->generatePageFooter();
     }
 
@@ -128,7 +139,7 @@ class Home extends Page
     public static function main()
     {
         try {
-            $page = new Home();
+            $page = new Index();
             $page->processReceivedData();
             $page->generateView();
         }
@@ -141,7 +152,7 @@ class Home extends Page
 
 // This call is starting the creation of the page.
 // That is input is processed and output is created.
-Home::main();
+Index::main();
 
 // Zend standard does not like closing php-tag!
 // PHP doesn't require the closing tag (it is assumed when the file ends).

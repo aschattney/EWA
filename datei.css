@@ -1,0 +1,126 @@
+﻿/*Überschriften von den Seiten*/
+h2 {
+    color: black;
+    font-family: Verdana;
+}
+
+/*Übersichtseite, wenn angeklickt*/
+a:visited {
+    color: blue;
+}
+
+.header {
+    clear: both;
+    text-align: center;
+    color: black;
+    border: 0.1em solid black;
+    background-color: #81DAF5;
+    border-left: none;
+    border-right: none;
+    /*margin-bottom : 0.2em;*/
+}
+
+body {
+    margin: 0;
+}
+
+.header h2 {
+    margin: 0.1em;
+}
+
+/*graue Buttons mit blauer schrift*/
+.button {
+    background-color: #D8D8D8;
+    color: blue;
+    padding: 0.6em;
+    float: left;
+    margin: 0.5em 0em 0em 1.5em;
+    width: 8em;
+    text-align: center;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    display: inline-block;
+    font-size: 0.9em;
+}
+
+/*Tabellenschrift*/
+table {
+    font-family: Verdana;
+}
+
+/*Adressenstyle*/
+.adresse {
+    font-family: Verdana;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+/*Bestellungsyle*/
+.bestellung {
+    font-family: Verdana;
+    font-size: 0.9em;
+}
+
+/*Bestellungrahmen*/
+.rahmen {
+    clear: both;
+    width: 100%; /*bei skalierung der seite, werden die bestellungen nicht kleiner..*/
+    border: 0.1em solid black;
+    margin: 0em;
+    float: left;
+    border-left: none;
+    border-right: none;
+    padding: 0.5em;
+}
+
+td {
+    text-align: center;
+}
+
+.rahmen:first-child:not(:only-child) {
+    border-bottom: none;
+}
+
+.rahmen:first-child {
+    border-top: none;
+}
+
+div {
+    height: auto;
+    border: none;
+    margin: 0;
+    padding: 0.2em;
+    width: auto;
+}
+
+.speisekarte {
+    float: left;
+    width: 15em;
+    height: 15em;
+}
+
+.inline {
+    display: inline-block;
+    width: 20%;
+    min-width: 20em;
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+}
+
+.align-top{
+    vertical-align: top;
+    margin-top: 0.8em;
+}
+
+
+#pizza_list {
+    height: 10em;
+    width: 20em;
+}
+
+.margin-from-header {
+    margin-top: 1em;
+}
+
+.button {
+
+}

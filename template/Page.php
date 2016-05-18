@@ -49,9 +49,21 @@ abstract class Page
      */
     protected function __construct() 
     {
-        $this->_database = /* to do: create instance of class MySQLi */;
+        $this->_database = Page::createDb();
     }
-    
+
+    private static function createDb(){
+        $hostname = "localhost";
+        $username = "root";
+        $password = "";
+        $database = "ewa";
+        $mysqli = new mysqli($hostname, $username, $password, $database);
+        if (mysqli_connect_errno()) {
+            throw new Exception("error while connecting to database");
+        }
+        return $mysqli;
+    }
+
     /**
      * Closes the DB connection and cleans up
      *

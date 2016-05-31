@@ -27,7 +27,7 @@
  * @author   Ralf Hahn, <ralf.hahn@h-da.de>
  */
 
-class OrderHeaderBlock        // to do: change name of class
+class Header        // to do: change name of class
 {
     // --- ATTRIBUTES ---
 
@@ -36,6 +36,7 @@ class OrderHeaderBlock        // to do: change name of class
      * accessed by all operations of the class.
      */
     protected $_database = null;
+    private $header_name;
 
     // to do: declare reference variables for members
     // representing substructures/blocks
@@ -50,9 +51,10 @@ class OrderHeaderBlock        // to do: change name of class
      *
      * @return none
      */
-    public function __construct($database)
+    public function __construct($database, $header_name)
     {
         $this->_database = $database;
+        $this->header_name = $header_name;
         // to do: instantiate members representing substructures/blocks
     }
 
@@ -80,15 +82,16 @@ class OrderHeaderBlock        // to do: change name of class
     {
         $this->getViewData();
 
-        if ($id) {
-            $id = "id=\"$id\"";
+        if($id){
+            return <<<EOT
+            <section id="{$id}" class="header"><h2>{$this->header_name}</h2></section>
+EOT;
+        }else{
+            return <<<EOT
+            <section class="header"><h2>{$this->header_name}</h2></section>
+EOT;
         }
 
-        $class = "class=\"header\"";
-
-        echo ($id) ? "<section $id $class>\n" : "<section $class>\n";
-        echo '<h2>Bestellung</h2>';
-        echo "</section>\n";
     }
 
 

@@ -18,9 +18,6 @@
 
 // to do: change name 'PageTemplate' throughout this file
 require_once '../template/Page.php';
-require_once './PizzaCartBlock.php';
-require_once './PizzaListBlock.php';
-require_once '../Header.php';
 
 /**
  * This is a template for top level classes, which represent
@@ -34,15 +31,17 @@ require_once '../Header.php';
  * @author   Bernhard Kreling, <b.kreling@fbi.h-da.de>
  * @author   Ralf Hahn, <ralf.hahn@h-da.de>
  */
-class Index extends Page
+
+require_once '../Header.php';
+
+class Update extends Page
 {
+
+    private $order_id;
+    private $status;
+
     // to do: declare reference variables for members
     // representing substructures/blocks
-
-    private $header;
-    private $pizzaCartBlock;
-    private $pizzaListBlock;
-
     /**
      * Instantiates members (to be defined above).
      * Calls the constructor of the parent i.e. page class.
@@ -53,9 +52,6 @@ class Index extends Page
     protected function __construct()
     {
         parent::__construct();
-        $this->header = new Header($this->_database, "Bestellung");
-        $this->pizzaCartBlock = new PizzaCartBlock($this->_database);
-        $this->pizzaListBlock = new PizzaListBlock($this->_database);
         // to do: instantiate members representing substructures/blocks
     }
 
@@ -80,6 +76,36 @@ class Index extends Page
     protected function getViewData()
     {
         // to do: fetch data for this view from the database
+        $stmt = $this->_database->stmt_init();
+        $stmt->prepare("UPDATE `order` SET status = ? WHERE id = ?");
+        $stmt->bind_param("ii", $this->status, $this->order_id);
+        $stmt->execute();
+        $stmt->close();
+
+        switch($this->status){
+            case 2:
+                $stmt = $this->_database->stmt_init();
+                $stmt->prepare("UPDATE `ordered_pizza` SET status = 3 WHERE order_id = ?");
+                $stmt->bind_param("i", $this->order_id);
+                $stmt->execute();
+                $stmt->close();
+                break;
+            case 3:
+                $stmt = $this->_database->stmt_init();
+                $stmt->prepare("UPDATE `ordered_pizza` SET status = 4 WHERE order_id = ?");
+                $stmt->bind_param("i", $this->order_id);
+                $stmt->execute();
+                $stmt->close();
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    private function toMoney($number)
+    {
+        return str_replace(".", ",", number_format($number, 2)) . "€";
     }
 
     /**
@@ -94,21 +120,6 @@ class Index extends Page
     protected function generateView()
     {
         $this->getViewData();
-        $this->generatePageHeader('Pizzaservice');
-        ?>
-            <link rel="stylesheet" type="text/css" href="../datei.css"/>
-            <script src="/ewa-pizzaservice/app.js" type="application/javascript"></script>
-        <?php
-        // to do: call generateView() for all members
-        // to do: output view of this page
-        $html = "";
-        $html .= $this->header->generateView();
-        $html .= "<div>";
-        $html .= $this->pizzaCartBlock->generateView();
-        $html .= $this->pizzaListBlock->generateView();
-        $html .= "</div>";
-        $html .= $this->generatePageFooter();
-        echo $html;
     }
 
     /**
@@ -124,6 +135,21 @@ class Index extends Page
     {
         parent::processReceivedData();
         // to do: call processReceivedData() for all members
+        if (!isset($_POST['order_id']) || !isset($_POST['status'])) {
+            http_response_code(500);
+            return;
+        }
+
+        $this->order_id = $_POST['order_id'];
+        $this->status = $_POST['status'];
+        if ($this->order_id <= 0){
+            http_response_code(500);
+            return false;
+        }else if($this->status < 1 || $this->status > 3){
+            http_response_code(500);
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -141,9 +167,11 @@ class Index extends Page
     public static function main()
     {
         try {
-            $page = new Index();
-            $page->processReceivedData();
-            $page->generateView();
+            $page = new Update();
+            if ($page->processReceivedData()){
+                $page->generateView();
+                header('Location: /ewa-pizzaservice/fahrer');
+            }
         }
         catch (Exception $e) {
             header("Content-type: text/plain; charset=UTF-8");
@@ -154,7 +182,7 @@ class Index extends Page
 
 // This call is starting the creation of the page.
 // That is input is processed and output is created.
-Index::main();
+Update::main();
 
 // Zend standard does not like closing php-tag!
 // PHP doesn't require the closing tag (it is assumed when the file ends).

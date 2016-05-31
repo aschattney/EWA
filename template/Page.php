@@ -59,6 +59,7 @@ abstract class Page
         $password = "";
         $database = "ewa";
         $mysqli = new mysqli($hostname, $username, $password, $database);
+        $mysqli->set_charset("utf8");
         if (mysqli_connect_errno()) {
             throw new Exception("error while connecting to database");
         }
@@ -90,17 +91,15 @@ abstract class Page
         $headline = htmlspecialchars($headline);
         header("Content-type: text/html; charset=UTF-8");
 
-        ?>
-
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8"/>
-            <title><?php echo $headline ?></title>
-        </head>
-        <body>
-
-        <?php
+        return <<<EOT
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8"/>
+                    <title>$headline</title>
+                </head>
+                <body>
+EOT;
 
     }
 
@@ -111,12 +110,11 @@ abstract class Page
      */
     protected function generatePageFooter()
     {
-        ?>
-
+        return <<<EOT
         </body>
         </html>
+EOT;
 
-        <?php
     }
 
     /**

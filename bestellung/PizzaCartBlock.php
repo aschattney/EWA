@@ -36,7 +36,7 @@ class PizzaCartBlock        // to do: change name of class
      * accessed by all operations of the class.
      */
     protected $_database = null;
-
+    private $pizzas;
     // to do: declare reference variables for members
     // representing substructures/blocks
 
@@ -64,7 +64,17 @@ class PizzaCartBlock        // to do: change name of class
      */
     protected function getViewData()
     {
-        // to do: fetch data for this view from the database
+        $this->pizzas = $this->_database->query("SELECT * FROM offer ORDER BY price");
+    }
+
+    private function generateRow($pizza, $price_with_comma){
+        return <<<EOT
+                <tr>
+                    <td><img src="{$pizza["picture_file_path"]}" width="100" height="100" alt="" title="{$pizza["pizza_name"]} €" onclick="cart.addPizza('{$pizza["pizza_name"]}', {$pizza["price"]})" /></td>
+                    <td>{$pizza["pizza_name"]}</td>
+                    <td>{$price_with_comma} €</td>
+                </tr>
+EOT;
     }
 
     /**
@@ -76,34 +86,25 @@ class PizzaCartBlock        // to do: change name of class
      *
      * @return none
      */
-    public function generateView($id = "")
+    public function generateView()
     {
         $this->getViewData();
 
-        if ($id) {
-            $id = "id=\"$id\"";
+        $html = "";
+        $html .= <<<EOT
+        <div class="inline"><table>
+EOT;
+
+        foreach($this->pizzas as $pizza){
+            $price_with_comma = str_replace(".", ",", $pizza['price']);
+            $html .= $this->generateRow($pizza, $price_with_comma);
         }
 
-        $arr = array();
-        array_push($arr, array("img" => "../Bilder/1.png", "title" => "Margherita", "price" => "4.00"));
-        array_push($arr, array("img" => "../Bilder/2.png", "title" => "Salami", "price" => "4.50"));
-        array_push($arr, array("img" => "../Bilder/3.png", "title" => "Hawaii", "price" => "5.50"));
-
-        echo "<div class=\"inline\">";
-        echo "<table>";
-
-        foreach($arr as $value){
-            ?>
-                    <tr>
-                        <td><img src="<?php echo $value["img"]?>" width="100" height="100" alt="" title="<?php echo $value["title"]?>" onclick="cart.addPizza('<?php echo $value["title"]?>', <?php echo $value["price"]?>)" /></td>
-                        <td><?php echo $value["title"]?></td>
-                        <td><?php echo $value["price"]?></td>
-                    </tr>
-            <?php
-        }
-
-        echo "</table>";
-        echo "</div>\n";
+        $html .= <<<EOT
+        </table>
+        </div>
+EOT;
+        return $html;
     }
 
 

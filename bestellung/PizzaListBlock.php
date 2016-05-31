@@ -80,9 +80,9 @@ class PizzaListBlock       // to do: change name of class
     {
         $this->getViewData();
 
-        ?>
-        <div class="inline align-top"> <form action="https://www.fbi.h-da.de/cgi-bin/Echo.pl" onsubmit="return cart.submit()">
-                <select name="pizzas" multiple="multiple" id="pizza_list" size="10" title="Pizzen">
+        return <<<EOT
+        <div class="inline align-top"> <form method="post" action="zusammenfassung/" onsubmit="return cart.submit()">
+                <select name="pizzas[]" multiple="multiple" id="pizza_list" size="10" title="Pizzen">
                 </select>
                 <p id="total_price"> 0,00€ </p>
                 <label for="lieferadresse">Lieferadresse:</label>
@@ -91,7 +91,7 @@ class PizzaListBlock       // to do: change name of class
                     <input type="button" name="Auswahl Löschen" value="Auswahl Löschen" onclick="cart.removePizza()"/>
                     <input type="submit" value="Bestellen"/></p>
             </form> </div> </div>
-        <?php
+EOT;
     }
 
 

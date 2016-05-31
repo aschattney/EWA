@@ -98,6 +98,32 @@ div {
     height: 15em;
 }
 
+.table>tr>td {
+    text-align:center;
+}
+
+.block-padding-small {
+    padding: 1em;
+}
+
+.price {
+    font-size: 1.25em;
+    font-weight: bolder;
+}
+
+form {
+    margin: 0;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0 1em;
+}
+
+.table tr td {
+    padding: 0.5em;
+}
+
 .inline {
     display: inline-block;
     width: 20%;
@@ -121,6 +147,8 @@ div {
     margin-top: 1em;
 }
 
-.button {
-
+.info-message {
+    font-size: 1.5em;
+    text-align:center;
+    margin: 0.5em;
 }

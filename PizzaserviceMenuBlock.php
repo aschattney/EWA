@@ -91,10 +91,10 @@ class PizzaserviceMenuBlock        // to do: change name of class
 
     private function generateMenu(){
 
-        $arr = array("Bestellung" => "Bestellung.html",
-                     "Kunde"      => "Kunde.html",
-                     "Bäcker"     => "Baecker.html",
-                     "Fahrer"     => "Fahrer.html");
+        $arr = array("Bestellung" => "bestellung/",
+                     "Kunde"      => "kunde/",
+                     "Bäcker"     => "baecker/",
+                     "Fahrer"     => "fahrer/");
 
         $class = "button";
 

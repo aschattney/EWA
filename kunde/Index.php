@@ -158,6 +158,13 @@ EOT;
 
     }
 
+    private function generateLogoutButton(){
+        return <<<EOT
+        <a href="/ewa-pizzaservice/kunde/logout" class="button">Logout</a>
+EOT;
+
+    }
+
     /**
      * @param $html
      * @return string
@@ -166,7 +173,7 @@ EOT;
     {
         $html = "";
         foreach ($this->orders as $order) {
-            $html .= $this->generatePreOrderBlock($order['address']);
+            $html .= $this->generatePreOrderBlock(htmlspecialchars($order['address']));
             $html .= $this->generateTableHeader();
             foreach ($order['pizzas'] as $pizza) {
                 $name = $pizza['pizza_name'];
@@ -207,8 +214,10 @@ EOT;
         $html .= $this->generatePageHeader('Pizzaservice');
         $html .= $this->generateHead();
         $html .= $this->header->generateView();
-        if (sizeof($this->orders) > 0){
+        if ($this->isAnyOrderAvailable()){
             $html .= $this->renderOrders();
+            if (isset($_SESSION['order_ids']))
+                $html .= $this->generateLogoutButton();
         }else{
             $html .= $this->generateInfoMessageNoOrdersMade();
         }
@@ -226,13 +235,15 @@ EOT;
     {
         // to do: fetch data for this view from the database
         $order_ids = $_SESSION['order_ids'];
-        $order_query = $this->generateOrderQuery($order_ids);
-        $rows = $this->fetchOrdersFromDatabase($order_query);
-        foreach ($rows as $row) {
-            $obj = $this->mapAttributes($row);
-            $result = $this->fetchPizzasFromOrder($row['id']);
-            $items = $this->mapPizzaAttributes($result);
-            $this->addPizzasToEntity($items, $obj);
+        if (sizeof($order_ids) > 0){
+            $order_query = $this->generateOrderQuery($order_ids);
+            $rows = $this->fetchOrdersFromDatabase($order_query);
+            foreach ($rows as $row) {
+                $obj = $this->mapAttributes($row);
+                $result = $this->fetchPizzasFromOrder($row['id']);
+                $items = $this->extractRelevantOrderAttributes($result);
+                $this->addPizzasToEntity($items, $obj);
+            }
         }
     }
 
@@ -313,9 +324,9 @@ EOT;
 
     /**
      * @param $result
-     * @return array
+     * @return array of the extracted information about the orders
      */
-    protected function mapPizzaAttributes($result)
+    protected function extractRelevantOrderAttributes($result)
     {
         $items = array();
         foreach ($result as $item) {
@@ -339,6 +350,14 @@ EOT;
     private function toMoney($number)
     {
         return str_replace(".", ",", number_format($number, 2)) . "€";
+    }
+
+    /**
+     * @return true if any order was made by the user in the current session, false otherwise
+     */
+    private function isAnyOrderAvailable()
+    {
+        return sizeof($this->orders) > 0;
     }
 }
 

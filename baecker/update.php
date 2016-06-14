@@ -122,6 +122,29 @@ class Update extends Page
         }
     }
 
+    /**
+     * @return bool
+     */
+    protected function isIdOrStatusMissingInPostVar()
+    {
+        if (!isset($_POST['id']) || !isset($_POST['status'])) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isInvalidStatusInPostVar()
+    {
+        if ($this->status < 0 || $this->status > 2) {
+            http_response_code(500);
+            return true;
+        }
+        return false;
+    }
+
     private function toMoney($number)
     {
         return str_replace(".", ",", number_format($number, 2)) . "€";
@@ -141,6 +164,14 @@ class Update extends Page
         $this->getViewData();
     }
 
+    protected function isInvalidPizzaIdInPostVar(){
+        if ($_POST['id'] <= 0){
+            http_response_code(500);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Processes the data that comes via GET or POST i.e. CGI.
      * If this page is supposed to do something with submitted
@@ -154,20 +185,24 @@ class Update extends Page
     {
         parent::processReceivedData();
         // to do: call processReceivedData() for all members
-        if (!isset($_POST['id']) || !isset($_POST['status'])) {
+        if ($this->isIdOrStatusMissingInPostVar()){
             http_response_code(500);
-            return;
+            return false;
+        }
+
+        if ($this->isInvalidPizzaIdInPostVar()){
+            http_response_code(500);
+            return false;
+        }
+
+        if ($this->isInvalidStatusInPostVar()){
+            http_response_code(500);
+            return false;
         }
 
         $this->pizza_id = $_POST['id'];
         $this->status = $_POST['status'];
-        if ($this->pizza_id <= 0){
-            http_response_code(500);
-            return false;
-        }else if($this->status < 0 || $this->status > 2){
-            http_response_code(500);
-            return false;
-        }
+
         return true;
     }
 

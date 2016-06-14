@@ -209,10 +209,11 @@ EOT;
     }
 
     private function generatePostBlock(){
+        $address = htmlspecialchars($this->address);
         return <<<EOT
         </table>
         <p>Gesamtpreis: <span class='price'>{$this->full_price}</span></p>
-        <p>Adresse: {$this->address}</p>
+        <p>Adresse: {$address}</p>
 EOT;
 
     }
@@ -259,6 +260,7 @@ EOT;
         }else{
             $html .= $this->generateInfoMessageOrderNotFound();
         }
+
         echo $html;
     }
 

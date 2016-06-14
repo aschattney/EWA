@@ -88,24 +88,57 @@ function Cart() {
         return null;
     }
 
+    function reselectPreviousSelectedOptions(used_indizes) {
+        for (var position = 0; position < used_indizes.length; position++) {
+            var index = used_indizes[position];
+            pizzaHtmlSelectElement.options[index].selected = true;
+        }
+    }
+
+    function findUsedIndizesInSelectHtml() {
+        var used_indizes = [];
+        for (var position = 0; position < pizzaHtmlSelectElement.options.length; position++) {
+            var option = pizzaHtmlSelectElement.options[position];
+            if (option.selected)
+                used_indizes.push(position);
+        }
+        return used_indizes;
+    }
+
     /**
-     * Entfernt die aktuell ausgewählte Pizza aus dem Warenkorb
+     * Entfernt aktuell ausgewählte Pizzen aus dem Warenkorb
      */
     this.removePizza = function () {
-        var index = pizzaHtmlSelectElement.selectedIndex;
-        if (index != -1) {
-            var obj = JSON.parse(pizzaHtmlSelectElement.options[index].value);
+
+        var used_indizes = findUsedIndizesInSelectHtml();
+        var new_indizes = cloneObject(used_indizes);
+
+        var position = 0;
+        while (position < used_indizes.length){
+            var index = used_indizes[position];
+            var option = pizzaHtmlSelectElement.options[index];
+            var obj = JSON.parse(option.value);
             var pizza = findPizzaElementByName(obj.name);
             if (pizza.count > 1) {
                 pizza.count -= 1;
-                render();
-                pizzaHtmlSelectElement.options[index].selected = true;
+                option.selected = true;
+                position++;
             } else {
                 var elemIndex = pizzas.indexOf(pizza);
                 pizzas.splice(elemIndex, 1);
-                render();
+                used_indizes.splice(position, 1);
+                new_indizes.splice(position, 1);
+                for (var i = 0; i < new_indizes.length; i++){
+                    if (new_indizes[i] > index){
+                        new_indizes[i] -= 1;
+                    }
+                }
             }
         }
+
+        render();
+        reselectPreviousSelectedOptions(new_indizes);
+
     };
 
     /**
@@ -163,8 +196,8 @@ function Cart() {
      * Klont ein Javascript Objekt
      * @param obj Gibt das geklonte Objekt zurück
      */
-    function cloneElement(obj) {
-        return JSON.parse(JSON.stringify(obj));
+    function cloneObject(obj) {
+        return JSON.parse(objToString(obj));
     }
 
     /**
@@ -202,7 +235,7 @@ function Cart() {
         // Informationen zur Pizza als Text angeben
         option.text = pizza.count + "x " + pizza.name;
         // Das Pizza Objekt klonen, damit die nächste Modifikation nicht auf das Element in der Liste angewendet wird
-        var obj = cloneElement(pizza);
+        var obj = cloneObject(pizza);
         // Den Preis aus dem geklonten Objekt entfernen, damit dieser nicht beim Submitten der Form mit übertragen wird
         delete obj.price;
         // Das geklonte Objekt als JSON formatierten String dem Wert des Option Elements zuweisen

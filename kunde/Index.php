@@ -98,17 +98,6 @@ class Index extends Page
         // to do: call processReceivedData() for all members
     }
 
-    private function generateHead(){
-        return <<<EOT
-        <link rel="stylesheet" type="text/css" href="/ewa-pizzaservice/datei.css"/>
-        <script src="/ewa-pizzaservice/poll.js" type="application/javascript"></script>
-        <script>
-            window.startPolling('/ewa-pizzaservice/kunde');
-        </script>
-EOT;
-
-    }
-
     private function generatePreOrderBlock($address){
         return <<<EOT
             <div class="rahmen">
@@ -198,6 +187,14 @@ EOT;
 
     }
 
+    protected function executePollJsScript(){
+        return <<<EOT
+    <script>
+        window.startPolling('/ewa-pizzaservice/kunde');
+    </script>
+EOT;
+    }
+
     /**
      * First the necessary data is fetched and then the HTML is
      * assembled for output. i.e. the header is generated, the content
@@ -209,20 +206,26 @@ EOT;
      */
     protected function generateView()
     {
-        $this->getViewData();
-        $html = "";
-        $html .= $this->generatePageHeader('Pizzaservice');
-        $html .= $this->generateHead();
-        $html .= $this->header->generateView();
-        if ($this->isAnyOrderAvailable()){
-            $html .= $this->renderOrders();
-            if (isset($_SESSION['order_ids']))
-                $html .= $this->generateLogoutButton();
-        }else{
-            $html .= $this->generateInfoMessageNoOrdersMade();
+        if ($this->getViewData()) {
+            $html = "";
+
+            $scripts = array("css" => array(), "js" => array(), "custom" => array());
+            array_push($scripts['js'], '/ewa-pizzaservice/poll.js');
+            array_push($scripts['custom'], $this->executePollJsScript());
+            array_push($scripts['css'], '/ewa-pizzaservice/datei.css');
+
+            $html .= $this->generatePageHeader('Pizzaservice', $scripts);
+            $html .= $this->header->generateView();
+            if ($this->isAnyOrderAvailable()) {
+                $html .= $this->renderOrders();
+                if (isset($_SESSION['order_ids']))
+                    $html .= $this->generateLogoutButton();
+            } else {
+                $html .= $this->generateInfoMessageNoOrdersMade();
+            }
+            $html .= $this->generatePageFooter();
+            echo $html;
         }
-        $html .= $this->generatePageFooter();
-        echo $html;
     }
 
     /**
@@ -233,18 +236,31 @@ EOT;
      */
     protected function getViewData()
     {
-        // to do: fetch data for this view from the database
-        $order_ids = $_SESSION['order_ids'];
-        if (sizeof($order_ids) > 0){
-            $order_query = $this->generateOrderQuery($order_ids);
-            $rows = $this->fetchOrdersFromDatabase($order_query);
-            foreach ($rows as $row) {
-                $obj = $this->mapAttributes($row);
-                $result = $this->fetchPizzasFromOrder($row['id']);
-                $items = $this->extractRelevantOrderAttributes($result);
-                $this->addPizzasToEntity($items, $obj);
-            }
+        if ($this->_database->connect_errno) {
+            throw new Exception("MySQL ErrorCode: " . $this->_database->connect_errno);
+            return false;
         }
+
+        try {
+
+            $order_ids = $_SESSION['order_ids'];
+            if (sizeof($order_ids) > 0) {
+                $order_query = $this->generateOrderQuery($order_ids);
+                $rows = $this->fetchOrdersFromDatabase($order_query);
+                foreach ($rows as $row) {
+                    $obj = $this->mapAttributes($row);
+                    $result = $this->fetchPizzasFromOrder($row['id']);
+                    $items = $this->extractRelevantOrderAttributes($result);
+                    $this->addPizzasToEntity($items, $obj);
+                }
+            }
+
+        }catch(Exception $e){
+            echo $e->getMessage();
+            return false;
+        }
+
+        return true;
     }
 
     /**

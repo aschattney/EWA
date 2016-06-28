@@ -95,24 +95,22 @@ class Index extends Page
         // to do: call processReceivedData() for all members
     }
 
-    private function generateHead(){
-        return <<<EOT
-        <link rel="stylesheet" type="text/css" href="/ewa-pizzaservice/datei.css"/>
-        <script src="/ewa-pizzaservice/poll.js" type="application/javascript"></script>
-        <script>
-            window.startPolling('/ewa-pizzaservice/fahrer');
-        </script>
-EOT;
-
-    }
-
-    private function generatePreOrderBlock($address){
+    private function generatePreOrderBlock($address)
+    {
         return <<<EOT
             <div class="rahmen"><p class="adresse">{$address}</p>
 EOT;
     }
 
-    private function generateOrder($id, $pizzas, $full_price, $checked){
+    private function generatePostOrderBlock()
+    {
+        return <<<EOT
+            </div>
+EOT;
+    }
+
+    private function generateOrder($id, $pizzas, $full_price, $checked)
+    {
         return <<<EOT
                <p class="bestellung">$pizzas</p>
                 <p class="bestellung">$full_price</p>
@@ -156,11 +154,21 @@ EOT;
 EOT;
     }
 
-    private function generateInfoMessage(){
+    private function generateInfoMessage()
+    {
         return <<<EOT
             <p class="info-message">Momentan keine Bestellungen zum Ausliefern</p>
 EOT;
 
+    }
+
+    protected function executePollJsScript()
+    {
+        return <<<EOT
+    <script>
+        window.startPolling('/ewa-pizzaservice/fahrer');
+    </script>
+EOT;
     }
 
     /**
@@ -174,21 +182,30 @@ EOT;
      */
     protected function generateView()
     {
-        $this->getViewData();
-        $html = "";
-        $html .= $this->generatePageHeader('Pizzaservice');
-        $html .= $this->generateHead();
-        $html .= $this->header->generateView();
+        if ($this->getViewData()) {
 
-        if (sizeof($this->orders) > 0){
-            foreach ($this->orders as $order) {
-                $html = $this->renderOrderBlock($order, $html);
+            $html = "";
+
+            $scripts = array("css" => array(), "js" => array(), "custom" => array());
+            array_push($scripts['js'], '/ewa-pizzaservice/poll.js');
+            array_push($scripts['custom'], $this->executePollJsScript());
+            array_push($scripts['css'], '/ewa-pizzaservice/datei.css');
+
+            $html .= $this->generatePageHeader('Pizzaservice', $scripts);
+
+            $html .= $this->header->generateView();
+
+            if (sizeof($this->orders) > 0) {
+                foreach ($this->orders as $order) {
+                    $html = $this->renderOrderBlock($order, $html);
+                }
+            } else {
+                $html .= $this->generateInfoMessage();
             }
-        }else{
-            $html .= $this->generateInfoMessage();
+            $html .= $this->generatePageFooter();
+            echo $html;
+
         }
-        $html .= $this->generatePageFooter();
-        echo $html;
     }
 
     /**
@@ -199,69 +216,84 @@ EOT;
      */
     protected function getViewData()
     {
-        // to do: fetch data for this view from the database
-        $rows = $this->_database->query("SELECT * FROM `order` WHERE status >= 1 AND status <= 2 ORDER BY order_time ASC");
-        foreach ($rows as $row) {
-            $obj = array(
-                "id" => $row['id'],
-                "address" => $row['address'],
-                "full_price" => $row['full_price'],
-                "status" => $row['status']);
-            $stmt = $this->_database->stmt_init();
-            $stmt->prepare("SELECT * FROM ordered_pizza WHERE order_id = ?");
-            $stmt->bind_param("i", $row['id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $items = array();
-            foreach ($result as $item) {
-                array_push($items, array("pizza_name" => $item["pizza_name"], "status" => $item["status"]));
+        if ($this->_database->connect_errno) {
+            throw new Exception("MySQL ErrorCode: " . $this->_database->connect_errno);
+            return false;
+        }
+
+        try {
+            $rows = $this->_database->query("SELECT * FROM `order` WHERE status >= 1 AND status <= 2 ORDER BY order_time ASC");
+            foreach ($rows as $row) {
+                $obj = array(
+                    "id" => $row['id'],
+                    "address" => $row['address'],
+                    "full_price" => $row['full_price'],
+                    "status" => $row['status']);
+                $stmt = $this->_database->stmt_init();
+                $stmt->prepare("SELECT * FROM ordered_pizza WHERE order_id = ?");
+                $stmt->bind_param("i", $row['id']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $items = array();
+                foreach ($result as $item) {
+                    array_push($items, array("pizza_name" => $item["pizza_name"], "status" => $item["status"]));
+                }
+                $obj['pizzas'] = $items;
+                array_push($this->orders, $obj);
             }
-            $obj['pizzas'] = $items;
-            array_push($this->orders, $obj);
+        } catch (Exception $e) {
+            echo $e->getMessage();
+            return false;
         }
 
+        return true;
+
     }
 
-    private function toMoney($number)
-    {
-        return str_replace(".", ",", number_format($number, 2)) . "€";
-    }
+private
+function toMoney($number)
+{
+    return str_replace(".", ",", number_format($number, 2)) . "€";
+}
 
-    /**
-     * Cleans up what ever is needed.
-     * Calls the destructor of the parent i.e. page class.
-     * So the database connection is closed.
-     *
-     * @return none
-     */
-    protected function __destruct()
-    {
-        parent::__destruct();
-    }
+/**
+ * Cleans up what ever is needed.
+ * Calls the destructor of the parent i.e. page class.
+ * So the database connection is closed.
+ *
+ * @return none
+ */
+protected
+function __destruct()
+{
+    parent::__destruct();
+}
 
-    /**
-     * @param $order
-     * @param $html
-     * @return string
-     */
-    protected function renderOrderBlock($order, $html)
-    {
-        $html .= $this->generatePreOrderBlock($order['address']);
-        $pizzas = array();
-        foreach ($order['pizzas'] as $pizza) {
-            array_push($pizzas, $pizza['pizza_name']);
-        }
-        $id = $order['id'];
-        $pizzas = implode(", ", $pizzas);
-        $full_price = $this->toMoney($order['full_price']);
-        $checked = array(
-            $order['status'] == 1 ? 'checked' : '',
-            $order['status'] == 2 ? 'checked' : '',
-            $order['status'] == 3 ? 'checked' : ''
-        );
-        $html .= $this->generateOrder($id, $pizzas, $full_price, $checked);
-        return $html;
+/**
+ * @param $order
+ * @param $html
+ * @return string
+ */
+protected
+function renderOrderBlock($order, $html)
+{
+    $html .= $this->generatePreOrderBlock($order['address']);
+    $pizzas = array();
+    foreach ($order['pizzas'] as $pizza) {
+        array_push($pizzas, $pizza['pizza_name']);
     }
+    $id = $order['id'];
+    $pizzas = implode(", ", $pizzas);
+    $full_price = $this->toMoney($order['full_price']);
+    $checked = array(
+        $order['status'] == 1 ? 'checked' : '',
+        $order['status'] == 2 ? 'checked' : '',
+        $order['status'] == 3 ? 'checked' : ''
+    );
+    $html .= $this->generateOrder($id, $pizzas, $full_price, $checked);
+    $html .= $this->generatePostOrderBlock();
+    return $html;
+}
 }
 
 // This call is starting the creation of the page.

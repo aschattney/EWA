@@ -94,19 +94,20 @@ class Index extends Page
     protected function generateView()
     {
         $this->getViewData();
-        $this->generatePageHeader('Pizzaservice');
-        ?>
-            <link rel="stylesheet" type="text/css" href="../datei.css"/>
-            <script src="/ewa-pizzaservice/app.js" type="application/javascript"></script>
-        <?php
+        $html = "";
+
+        $scripts = array("css" => array(), "js" => array());
+        array_push($scripts['js'], '/ewa-pizzaservice/app.js');
+        array_push($scripts['css'], '/ewa-pizzaservice/datei.css');
+
+        $html .= $this->generatePageHeader('Pizzaservice', $scripts);
         // to do: call generateView() for all members
         // to do: output view of this page
-        $html = "";
         $html .= $this->header->generateView();
         $html .= "<div>";
         $html .= $this->pizzaCartBlock->generateView();
         $html .= $this->pizzaListBlock->generateView();
-        $html .= "</div>";
+        //$html .= "</div>";
         $html .= $this->generatePageFooter();
         echo $html;
     }

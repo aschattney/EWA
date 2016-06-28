@@ -78,18 +78,23 @@ class PizzaserviceMenuBlock        // to do: change name of class
      */
     public function generateView($id = "")
     {
+        $html = "";
+
         $this->getViewData();
 
         if ($id) {
             $id = "id=\"$id\"";
         }
 
-        echo ($id) ? "<div $id>\n" : "<div>\n";
-        $this->generateMenu();
-        echo "</div>\n";
+        $html .= ($id) ? "<div $id>\n" : "<div>\n";
+        $html .= $this->generateMenu();
+        $html .= "</div>\n";
+        return $html;
     }
 
     private function generateMenu(){
+
+        $result = "";
 
         $arr = array("Bestellung" => "bestellung/",
                      "Kunde"      => "kunde/",
@@ -99,8 +104,10 @@ class PizzaserviceMenuBlock        // to do: change name of class
         $class = "button";
 
         foreach($arr as $key => $html){
-            echo "<a href=\"$html\" class=\"$class\">$key</a>";
+            $result .= "<a href=\"$html\" class=\"$class\">$key</a>";
         }
+
+        return $result;
 
     }
 

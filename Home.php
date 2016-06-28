@@ -88,14 +88,18 @@ class Home extends Page
     protected function generateView()
     {
         $this->getViewData();
-        $this->generatePageHeader('Pizzaservice');
-        ?>
-            <link rel="stylesheet" type="text/css" href="datei.css"/>
-        <?php
+        $html = "";
+
+        $scripts = array("css" => array(), "js" => array());
+        array_push($scripts['css'], '/ewa-pizzaservice/datei.css');
+
+        $html .= $this->generatePageHeader('Pizzaservice', $scripts);
+
         // to do: call generateView() for all members
         // to do: output view of this page
-        $this->pizzaservice_menu_block->generateView();
-        $this->generatePageFooter();
+        $html .= $this->pizzaservice_menu_block->generateView();
+        $html .= $this->generatePageFooter();
+        echo $html;
     }
 
     /**

@@ -109,9 +109,9 @@ class Update extends Page
         $stmt->fetch();
         $stmt->close();
 
-        var_dump($order_id);
-        var_dump($amount);
-        var_dump($amount_rows);
+        //var_dump($order_id);
+        //var_dump($amount);
+        //var_dump($amount_rows);
 
         if ($amount == $amount_rows){
             $stmt = $this->_database->stmt_init();

@@ -115,66 +115,76 @@ class Index extends Page
     {
         // to do: fetch data for this view from the database
 
-        if (isset($_GET['id'])) {
+        if ($this->_database->connect_errno) {
+            throw new Exception("MySQL ErrorCode: " . $this->_database->connect_errno);
+            return false;
+        }
 
+        try {
 
+            if (isset($_GET['id'])) {
 
-            $query = "SELECT o.pizza_name AS name, COUNT(*) AS `count`, p.price FROM offer o JOIN ordered_pizza p ON o.pizza_name = p.pizza_name JOIN `order` ord ON p.order_id = ord.id WHERE p.order_id = ? GROUP BY o.pizza_name";
-            $result = $this->query("{$query}", "i", $_GET['id']);
-            $set = $this->queryOne("SELECT address, full_price FROM `order` WHERE id = ?", "i", $_GET['id']);
+                $query = "SELECT o.pizza_name AS name, COUNT(*) AS `count`, p.price FROM offer o JOIN ordered_pizza p ON o.pizza_name = p.pizza_name JOIN `order` ord ON p.order_id = ord.id WHERE p.order_id = ? GROUP BY o.pizza_name";
+                $result = $this->query("{$query}", "i", $_GET['id']);
+                $set = $this->queryOne("SELECT address, full_price FROM `order` WHERE id = ?", "i", $_GET['id']);
 
-            if (sizeof($set) == 0){
-                return false;
-            }
+                if (sizeof($set) == 0) {
+                    return false;
+                }
 
-            $this->address = $set[0];
-            $this->full_price = $set[1];
-            $this->full_price = $this->toMoney((double)$this->full_price) . "€";
-            foreach($result as &$row){
-                $price = $row['price'] * $row['count'];
-                $row['money'] = $this->toMoney($price);
-            }
-            $this->data = $this->to_object($result);
+                $this->address = $set[0];
+                $this->full_price = $set[1];
+                $this->full_price = $this->toMoney((double)$this->full_price) . "€";
+                foreach ($result as &$row) {
+                    $price = $row['price'] * $row['count'];
+                    $row['money'] = $this->toMoney($price);
+                }
+                $this->data = $this->to_object($result);
 
-        } else {
+            } else {
 
-            foreach ($this->pizzas as $pizza) {
-                $pizza = json_decode($pizza);
-                $stmt = $this->_database->stmt_init();
-                $stmt->prepare("SELECT price FROM offer WHERE pizza_name = ?");
-                $stmt->bind_param("s", $pizza->name);
-                $stmt->execute();
-                $price = 0.0;
-                $stmt->bind_result($price);
-                $stmt->fetch();
-                $pizza->price = $price;
-                $pizza->money = $this->toMoney($price * $pizza->count);
-                $this->full_price += $price * $pizza->count;
-                array_push($this->data, $pizza);
-            }
-
-            $p = $this->full_price;
-            $this->full_price = $this->toMoney($this->full_price) . "€";
-
-            $stmt = $this->_database->stmt_init();
-            $stmt->prepare("INSERT INTO `order` (address, full_price, status) VALUES(?,?,0)");
-            $stmt->bind_param("sd", $this->address, $p);
-            $stmt->execute();
-
-            $this->order_id = $stmt->insert_id;
-
-            array_push($_SESSION['order_ids'], $this->order_id);
-
-            foreach ($this->data as $pizza) {
-                for ($i = 0; $i < $pizza->count; $i++) {
+                foreach ($this->pizzas as $pizza) {
+                    $pizza = json_decode($pizza);
                     $stmt = $this->_database->stmt_init();
-                    $stmt->prepare("INSERT INTO ordered_pizza (order_id, pizza_name, price, status) VALUES(?, ?, ?, ?)");
-                    $status = "0";
-                    $stmt->bind_param("isds", $this->order_id, $pizza->name, $pizza->price , $status);
+                    $stmt->prepare("SELECT price FROM offer WHERE pizza_name = ?");
+                    $stmt->bind_param("s", $pizza->name);
                     $stmt->execute();
+                    $price = 0.0;
+                    $stmt->bind_result($price);
+                    $stmt->fetch();
+                    $pizza->price = $price;
+                    $pizza->money = $this->toMoney($price * $pizza->count);
+                    $this->full_price += $price * $pizza->count;
+                    array_push($this->data, $pizza);
+                }
+
+                $p = $this->full_price;
+                $this->full_price = $this->toMoney($this->full_price) . "€";
+
+                $stmt = $this->_database->stmt_init();
+                $stmt->prepare("INSERT INTO `order` (address, full_price, status) VALUES(?,?,0)");
+                $stmt->bind_param("sd", $this->address, $p);
+                $stmt->execute();
+
+                $this->order_id = $stmt->insert_id;
+
+                array_push($_SESSION['order_ids'], $this->order_id);
+
+                foreach ($this->data as $pizza) {
+                    for ($i = 0; $i < $pizza->count; $i++) {
+                        $stmt = $this->_database->stmt_init();
+                        $stmt->prepare("INSERT INTO ordered_pizza (order_id, pizza_name, price, status) VALUES(?, ?, ?, ?)");
+                        $status = "0";
+                        $stmt->bind_param("isds", $this->order_id, $pizza->name, $pizza->price, $status);
+                        $stmt->execute();
+                    }
                 }
             }
+        }catch(Exception $e){
+            echo $e->getMessage();
+            return false;
         }
+
         return true;
     }
 
@@ -193,7 +203,6 @@ class Index extends Page
         <th>Pizza</th>
         <th>Preis</th>
         </tr>
-        </div>
 EOT;
     }
 
@@ -214,6 +223,7 @@ EOT;
         </table>
         <p>Gesamtpreis: <span class='price'>{$this->full_price}</span></p>
         <p>Adresse: {$address}</p>
+        </div>
 EOT;
 
     }
@@ -246,8 +256,10 @@ EOT;
 
         $html = "";
 
-        $html = $this->generatePageHeader('Pizzaservice');
-        $html .= $this->generateHead();
+        $scripts = array("css" => array(), "js" => array());
+        array_push($scripts['css'], '/ewa-pizzaservice/datei.css');
+
+        $html .= $this->generatePageHeader('Pizzaservice', $scripts);
         $html .= $this->header->generateView();
 
         if ($this->getViewData()){

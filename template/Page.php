@@ -60,8 +60,8 @@ abstract class Page
         $database = "ewa";
         $mysqli = new mysqli($hostname, $username, $password, $database);
         $mysqli->set_charset("utf8");
-        if (mysqli_connect_errno()) {
-            throw new Exception("error while connecting to database");
+        if ($mysqli->connect_errno) {
+            throw new Exception("error while connecting to database - ErrorCode: " . $mysqli->connect_errno);
         }
         return $mysqli;
     }
@@ -86,21 +86,28 @@ abstract class Page
      *
      * @return none
      */
-    protected function generatePageHeader($headline = "")
+    protected function generatePageHeader($headline, $scripts)
     {
         $headline = htmlspecialchars($headline);
         header("Content-type: text/html; charset=UTF-8");
 
+        $s = "";
+        foreach($scripts as $key => $values){
+            foreach($values as $value){
+                if ($key == "css"){
+                    $s .= "<link rel='stylesheet' type='text/css' href='$value'/>\n";
+                }else if($key == "js"){
+                    $s .= "<script src='$value' type='application/javascript'></script>\n";
+                }else if($key == "custom"){
+                    $s .= $value . "\n";
+                }
+            }
+        }
+
         return <<<EOT
                 <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8"/>
-                    <title>$headline</title>
-                </head>
-                <body>
+                <html><head><meta charset="UTF-8"/><title>$headline</title>$s</head><body>
 EOT;
-
     }
 
     /**

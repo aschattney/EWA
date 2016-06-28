@@ -1,4 +1,4 @@
-<?php	// UTF-8 marker äöüÄÖÜß€
+<?php // UTF-8 marker äöüÄÖÜß€
 /**
  * Class BlockTemplate for the exercises of the EWA lecture
  * Demonstrates use of PHP including class and OO.
@@ -22,11 +22,9 @@
  * of top level classes.
  * The order of methods might correspond to the order of thinking
  * during implementation.
-
  * @author   Bernhard Kreling, <b.kreling@fbi.h-da.de>
  * @author   Ralf Hahn, <ralf.hahn@h-da.de>
  */
-
 class PizzaCartBlock        // to do: change name of class
 {
     // --- ATTRIBUTES ---
@@ -64,10 +62,21 @@ class PizzaCartBlock        // to do: change name of class
      */
     protected function getViewData()
     {
-        $this->pizzas = $this->_database->query("SELECT * FROM offer ORDER BY price");
+        if ($this->_database->connect_errno) {
+            throw new Exception("MySQL ErrorCode: " . $this->_database->connect_errno);
+            return false;
+        }
+        try {
+            $this->pizzas = $this->_database->query("SELECT * FROM offer ORDER BY price");
+        } catch (Exception $e) {
+            echo $e->getMessage();
+            return false;
+        }
+        return true;
     }
 
-    private function generateRow($pizza, $price_with_comma){
+    private function generateRow($pizza, $price_with_comma)
+    {
         return <<<EOT
                 <tr>
                     <td><img src="{$pizza["picture_file_path"]}" width="100" height="100" alt="" title="{$pizza["pizza_name"]} €" onclick="cart.addPizza('{$pizza["pizza_name"]}', {$pizza["price"]})" /></td>
@@ -88,23 +97,24 @@ EOT;
      */
     public function generateView()
     {
-        $this->getViewData();
+        if ($this->getViewData()) {
 
-        $html = "";
-        $html .= <<<EOT
+            $html = "";
+            $html .= <<<EOT
         <div class="inline"><table>
 EOT;
 
-        foreach($this->pizzas as $pizza){
-            $price_with_comma = str_replace(".", ",", $pizza['price']);
-            $html .= $this->generateRow($pizza, $price_with_comma);
-        }
+            foreach ($this->pizzas as $pizza) {
+                $price_with_comma = str_replace(".", ",", $pizza['price']);
+                $html .= $this->generateRow($pizza, $price_with_comma);
+            }
 
-        $html .= <<<EOT
+            $html .= <<<EOT
         </table>
         </div>
 EOT;
-        return $html;
+            return $html;
+        }
     }
 
 

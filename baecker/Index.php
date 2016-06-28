@@ -96,16 +96,6 @@ class Index extends Page
         // to do: call processReceivedData() for all members
     }
 
-    private function generateHead(){
-        return <<<EOT
-    <link rel="stylesheet" type="text/css" href="/ewa-pizzaservice/datei.css"/>
-    <script src="/ewa-pizzaservice/poll.js" type="application/javascript"></script>
-    <script>
-        window.startPolling('/ewa-pizzaservice/baecker');
-    </script>
-EOT;
-    }
-
     private function generatePreTable($address){
         return <<<EOT
     <div class="rahmen">
@@ -134,6 +124,14 @@ EOT;
 
     }
 
+    protected function executePollJsScript(){
+        return <<<EOT
+    <script>
+        window.startPolling('/ewa-pizzaservice/baecker');
+    </script>
+EOT;
+    }
+
     /**
      * First the necessary data is fetched and then the HTML is
      * assembled for output. i.e. the header is generated, the content
@@ -145,39 +143,44 @@ EOT;
      */
     protected function generateView()
     {
-        $this->getViewData();
+        if ($this->getViewData()) {
 
-        $html = "";
+            $html = "";
 
-        $html .= $this->generatePageHeader('Pizzaservice');
+            $scripts = array("css" => array(), "js" => array(), "custom" => array());
+            array_push($scripts['js'], '/ewa-pizzaservice/poll.js');
+            array_push($scripts['custom'], $this->executePollJsScript());
+            array_push($scripts['css'], '/ewa-pizzaservice/datei.css');
 
-        $html .= $this->generateHead();
+            $html .= $this->generatePageHeader('Pizzaservice', $scripts);
 
-        $html .= $this->header->generateView();
+            $html .= $this->header->generateView();
 
-        if (sizeof($this->orders) > 0){
-            foreach ($this->orders as $order){
-                $html .= $this->generatePreTable($order['address']);
-                foreach ($order['pizzas'] as $pizza) {
-                    $id = $pizza['id'];
-                    $name = $pizza['pizza_name'];
-                    $status = $pizza['status'];
-                    $checked = array(
-                        0 => $status == 0 ? "checked" : "",
-                        1 => $status == 1 ? "checked" : "",
-                        2 => $status == 2 ? "checked" : ""
-                    );
-                    $element = new InputElement($this->_database, $id, $name, $checked);
-                    $html .=  $element->generateView();
+            if (sizeof($this->orders) > 0) {
+                foreach ($this->orders as $order) {
+                    $html .= $this->generatePreTable($order['address']);
+                    foreach ($order['pizzas'] as $pizza) {
+                        $id = $pizza['id'];
+                        $name = $pizza['pizza_name'];
+                        $status = $pizza['status'];
+                        $checked = array(
+                            0 => $status == 0 ? "checked" : "",
+                            1 => $status == 1 ? "checked" : "",
+                            2 => $status == 2 ? "checked" : ""
+                        );
+                        $element = new InputElement($this->_database, $id, $name, $checked);
+                        $html .= $element->generateView();
+                    }
+                    $html .= $this->generatePostTable();
                 }
-                $html .= $this->generatePostTable();
+            } else {
+                $html .= $this->generateInfoMessage();
             }
-        }else{
-            $html .= $this->generateInfoMessage();
-        }
 
-        $html .= $this->generatePageFooter();
-        echo $html;
+            $html .= $this->generatePageFooter();
+            echo $html;
+
+        }
     }
 
     /**
@@ -188,27 +191,37 @@ EOT;
      */
     protected function getViewData()
     {
-        // to do: fetch data for this view from the database
-        $rows = $this->_database->query("SELECT * FROM `order` WHERE status = 0 ORDER BY order_time ASC");
-        foreach ($rows as $row) {
-            $obj = array(
-                "id" => $row['id'],
-                "address" => $row['address'],
-                "full_price" => $row['full_price'],
-                "status" => $row['status']);
-            $stmt = $this->_database->stmt_init();
-            $stmt->prepare("SELECT * FROM ordered_pizza WHERE order_id = ? AND status <= 2");
-            $stmt->bind_param("i", $row['id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $items = array();
-            foreach ($result as $item) {
-                array_push($items, array("id" => $item["id"], "pizza_name" => $item["pizza_name"], "status" => $item["status"]));
-            }
-            $obj['pizzas'] = $items;
-            array_push($this->orders, $obj);
+
+        if ($this->_database->connect_errno) {
+            throw new Exception("MySQL ErrorCode: " . $this->_database->connect_errno);
+            return false;
         }
 
+        try {
+            $rows = $this->_database->query("SELECT * FROM `order` WHERE status = 0 ORDER BY order_time ASC");
+            foreach ($rows as $row) {
+                $obj = array(
+                    "id" => $row['id'],
+                    "address" => $row['address'],
+                    "full_price" => $row['full_price'],
+                    "status" => $row['status']);
+                $stmt = $this->_database->stmt_init();
+                $stmt->prepare("SELECT * FROM ordered_pizza WHERE order_id = ? AND status <= 2");
+                $stmt->bind_param("i", $row['id']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $items = array();
+                foreach ($result as $item) {
+                    array_push($items, array("id" => $item["id"], "pizza_name" => $item["pizza_name"], "status" => $item["status"]));
+                }
+                $obj['pizzas'] = $items;
+                array_push($this->orders, $obj);
+            }
+        }catch(Exception $e){
+            echo $e->getMessage();
+            return false;
+        }
+        return true;
     }
 
     /**
